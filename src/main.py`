@@ -1,0 +1,38 @@
+---
+
+### 📄 `src/main.py`
+```python
+from fastapi import FastAPI
+from pydantic import BaseModel
+from typing import Optional
+
+app = FastAPI(
+    title="Notification Service API",
+    description="Handles email, SMS, and push notifications.",
+    version="1.0.0",
+)
+
+# --- Models ---
+class Notification(BaseModel):
+    user_id: str
+    channel: str  # email | sms | push
+    message: str
+    subject: Optional[str] = None
+
+# --- In-memory store for demo ---
+notifications_db = []
+
+# --- Endpoints ---
+@app.post("/notify", summary="Send a notification")
+def send_notification(notification: Notification):
+    notifications_db.append(notification.dict())
+    return {"status": "sent", "notification": notification}
+
+@app.get("/notifications", summary="List all notifications")
+def list_notifications():
+    return {"notifications": notifications_db}
+
+@app.get("/notifications/{user_id}", summary="Get notifications for a user")
+def get_notifications(user_id: str):
+    user_notifications = [n for n in notifications_db if n["user_id"] == user_id]
+    return {"user_id": user_id, "notifications": user_notifications}
